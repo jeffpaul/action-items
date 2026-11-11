@@ -258,6 +258,18 @@ Any local WordPress works. With Docker, [`wp-env`](https://developer.wordpress.o
 npx @wordpress/env start    # http://localhost:8888, admin / password
 ```
 
+### Continuous integration
+
+`.github/workflows/test.yml` runs on every pull request and on every push to `main`:
+
+| Job | What it runs |
+| --- | --- |
+| Lint, JavaScript tests and build | PHPCS, ESLint, Stylelint, the JavaScript unit tests and a production build |
+| PHPUnit | The PHP suite on a single site and on multisite, for PHP 7.4 with WordPress 6.5, PHP 8.3 with WordPress 6.8, and PHP 8.4 with WordPress 7.1 |
+| End-to-end | The Playwright suite in Chromium, against a fresh WordPress 7.1 site on PHP 8.3 |
+
+WordPress comes from the `X.Y-branch` branches of the `WordPress/WordPress` mirror, so each job tests the latest release of that version plus the fixes queued for its next minor release. The PHPUnit job installs the WordPress test library that matches the version under test. When a new WordPress version comes out, add it to the matrix and move the end-to-end job to it.
+
 ## What has been verified
 
 Executed on 2026-11-11 with PHP 8.3 and MariaDB 10.11:
