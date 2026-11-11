@@ -283,9 +283,11 @@ Executed on 2026-11-11 with PHP 8.3 and MariaDB 10.11:
 | JavaScript unit tests | 14 tests passed |
 | PHPCS (WordPress, PHPCompatibilityWP for PHP 7.4+), ESLint, Stylelint | No errors |
 
+The [GitHub Actions workflow](#continuous-integration) repeats all of these on every pull request. Its first run, on 2026-11-11, also passed the PHPUnit suite on PHP 7.4 with WordPress 6.5 and on PHP 8.4 with WordPress 7.1, single site and multisite.
+
 Not executed, so treat as unverified:
 
-- PHP versions other than 8.3. PHP 7.4 to 8.2 compatibility is only checked statically by PHPCompatibilityWP.
+- PHP 8.0 to 8.2, and PHP 8.5 or later. PHP 7.4, 8.3 and 8.4 run in CI; the other versions are only checked statically by PHPCompatibilityWP.
 - The block editor on WordPress versions older than 7.1. The PHP side is tested on 6.5 and 6.8; the editor scripts are not.
 - Browsers other than Chromium, and assistive technology. The markup uses native controls, labels and live announcements, but no screen reader session was run.
 - `wp-env`. The configuration file is included, but Docker was not available where the plugin was built.
