@@ -1,0 +1,218 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# A new push to a pull request replaces the run that is still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint, JavaScript tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: PHPCS
+        run: composer lint
+
+      - name: ESLint
+        run: npm run lint:js
+
+      - name: Stylelint
+        run: npm run lint:css
+
+      - name: JavaScript unit tests
+        run: npm run test:js
+
+      - name: Build
+        run: npm run build
+
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php }}, WordPress ${{ matrix.wp }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest supported pair, the newest pair, and one in between.
+        include:
+          - php: '7.4'
+            wp: '6.5'
+          - php: '8.3'
+            wp: '6.8'
+          - php: '8.4'
+            wp: '7.1'
+    services:
+      database:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      WP_VERSION: ${{ matrix.wp }}
+      WP_TESTS_DB_NAME: wordpress_test
+      WP_TESTS_DB_USER: root
+      WP_TESTS_DB_PASSWORD: root
+      WP_TESTS_DB_HOST: 127.0.0.1
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The render tests need the built blocks.
+      - name: Build the blocks
+        run: |
+          npm ci
+          npm run build
+
+      - name: Download WordPress
+        run: |
+          git clone --depth 1 --branch "${WP_VERSION}-branch" https://github.com/WordPress/WordPress.git "$RUNNER_TEMP/wordpress"
+          echo "WP_TESTS_CORE_DIR=$RUNNER_TEMP/wordpress" >> "$GITHUB_ENV"
+
+      # The lock file holds the test library of the newest WordPress version;
+      # this swaps in the one that matches the version under test.
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-interaction --no-progress
+          composer require --dev --no-interaction --no-progress "wp-phpunit/wp-phpunit:~${WP_VERSION}.0"
+
+      - name: Run the tests on a single site
+        run: vendor/bin/phpunit
+
+      - name: Run the tests on multisite
+        run: vendor/bin/phpunit -c tests/phpunit/multisite.xml
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      database:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      WP_VERSION: '7.1'
+      WP_BASE_URL: http://127.0.0.1:8080
+      WP_USERNAME: admin
+      WP_PASSWORD: password
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
+          coverage: none
+          tools: wp-cli
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build the blocks
+        run: |
+          npm ci
+          npm run build
+
+      # A throwaway site that only exists for this job, with the plugin
+      # linked in from the checkout.
+      - name: Install WordPress
+        run: |
+          git clone --depth 1 --branch "${WP_VERSION}-branch" https://github.com/WordPress/WordPress.git "$RUNNER_TEMP/wordpress"
+          ln -s "$GITHUB_WORKSPACE" "$RUNNER_TEMP/wordpress/wp-content/plugins/action-items"
+          cd "$RUNNER_TEMP/wordpress"
+          wp config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=127.0.0.1 --skip-check
+          wp core install --url="$WP_BASE_URL" --title="Action Items" --admin_user="$WP_USERNAME" --admin_password="$WP_PASSWORD" --admin_email=admin@example.org --skip-email
+          wp plugin activate action-items
+
+      - name: Start the web server
+        run: |
+          mkdir -p artifacts
+          PHP_CLI_SERVER_WORKERS=6 php -S 127.0.0.1:8080 -t "$RUNNER_TEMP/wordpress" > artifacts/php-server.log 2>&1 &
+          curl --silent --show-error --fail --output /dev/null --retry 10 --retry-delay 1 --retry-connrefused "$WP_BASE_URL/wp-login.php"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the end-to-end tests
+        run: npm run test:e2e
+        env:
+          # Chromium is already installed; without this the runner downloads every browser.
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      - name: Upload screenshots and the server log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-failure
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

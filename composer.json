@@ -1,0 +1,32 @@
+{
+	"name": "jeffpaul/action-items",
+	"description": "Task blocks for meeting notes with a centralized, filterable task list.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=7.4"
+	},
+	"require-dev": {
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"phpunit/phpunit": "^9.6",
+		"wp-coding-standards/wpcs": "^3.1",
+		"wp-phpunit/wp-phpunit": "^6.5 || ^7.0",
+		"yoast/phpunit-polyfills": "^2.0 || ^3.0 || ^4.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "7.4"
+		},
+		"sort-packages": true
+	},
+	"scripts": {
+		"lint": "phpcs",
+		"format": "phpcbf",
+		"test": "phpunit",
+		"test:multisite": "WP_MULTISITE=1 phpunit"
+	}
+}
