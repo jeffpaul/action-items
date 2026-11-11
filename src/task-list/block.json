@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "action-items/task-list",
+	"title": "Task List",
+	"category": "widgets",
+	"icon": "list-view",
+	"description": "Lists the tasks of all published posts. Logged-in visitors see their own incomplete tasks first.",
+	"keywords": [ "tasks", "todo", "action items", "my tasks" ],
+	"textdomain": "action-items",
+	"attributes": {
+		"defaultView": {
+			"type": "string",
+			"enum": [ "mine", "all" ],
+			"default": "mine"
+		},
+		"perPage": {
+			"type": "integer",
+			"default": 20
+		},
+		"showFilters": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"editorScript": "file:./index.js",
+	"style": [ "action-items-task-style", "file:./style-index.css" ],
+	"viewScript": "action-items-view"
+}

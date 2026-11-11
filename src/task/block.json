@@ -1,0 +1,54 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "action-items/task",
+	"title": "Task",
+	"category": "text",
+	"icon": "yes-alt",
+	"description": "An action item that can be assigned, given a due date and marked complete. Tasks appear in Task List blocks.",
+	"keywords": [ "todo", "action item", "assign", "checklist" ],
+	"textdomain": "action-items",
+	"attributes": {
+		"taskId": {
+			"type": "string"
+		},
+		"title": {
+			"type": "string",
+			"default": ""
+		},
+		"assignees": {
+			"type": "array",
+			"items": {
+				"type": "integer"
+			},
+			"default": []
+		},
+		"status": {
+			"type": "string",
+			"enum": [ "not-started", "in-progress", "completed" ],
+			"default": "not-started"
+		},
+		"dueDate": {
+			"type": "string"
+		}
+	},
+	"usesContext": [ "postId" ],
+	"supports": {
+		"html": false,
+		"reusable": false,
+		"spacing": {
+			"margin": true
+		}
+	},
+	"example": {
+		"attributes": {
+			"title": "Review the AI provider integration proposal",
+			"status": "in-progress",
+			"dueDate": "2030-11-13"
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "action-items-view"
+}

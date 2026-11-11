@@ -1,0 +1,44 @@
+{
+	"name": "action-items",
+	"version": "0.1.0",
+	"description": "Task blocks for meeting notes with a centralized, filterable task list.",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"lint:js": "wp-scripts lint-js src tests/js",
+		"lint:css": "wp-scripts lint-style \"src/**/*.scss\"",
+		"format": "wp-scripts format src tests/js",
+		"test:js": "wp-scripts test-unit-js",
+		"test:e2e": "wp-scripts test-playwright --config tests/e2e/playwright.config.js",
+		"plugin-zip": "wp-scripts plugin-zip"
+	},
+	"files": [
+		"build",
+		"includes",
+		"action-items.php",
+		"uninstall.php",
+		"readme.txt",
+		"LICENSE"
+	],
+	"devDependencies": {
+		"@wordpress/a11y": "^5.1.0",
+		"@wordpress/api-fetch": "^8.1.0",
+		"@wordpress/block-editor": "^20.0.0",
+		"@wordpress/blocks": "^17.1.0",
+		"@wordpress/components": "^44.0.0",
+		"@wordpress/compose": "^9.1.0",
+		"@wordpress/data": "^11.1.0",
+		"@wordpress/date": "^6.1.0",
+		"@wordpress/dom-ready": "^5.1.0",
+		"@wordpress/element": "^10.1.0",
+		"@wordpress/i18n": "^7.1.0",
+		"@wordpress/notices": "^6.1.0",
+		"@wordpress/scripts": "^37.1.0",
+		"@wordpress/server-side-render": "^7.1.0",
+		"@wordpress/url": "^5.1.0",
+		"vite": "^8.3.7",
+		"vitest": "^5.1.0"
+	}
+}
